@@ -11,7 +11,7 @@ lr=2e-3
 epochs=4000
 ds=shapenet15k
 log_name="ae/${ds}-cate${cate}"
-data_dir="data/ShapeNetCore.v2.PC15k"
+data_dir="ShapeNetCore.v2.PC15k"
 
 python train.py \
     --log_name ${log_name} \
