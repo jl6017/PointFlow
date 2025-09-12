@@ -60,25 +60,25 @@ class CNF(nn.Module):
 
         if self.conditional:
             assert context is not None
+            context = context.to(x)  # <<< keep context on same device/dtype as x
             states = (x, _logpx, context)
-            # atol = [self.atol] * 3
-            # rtol = [self.rtol] * 3
         else:
             states = (x, _logpx)
-            # atol = [self.atol] * 2
-            # rtol = [self.rtol] * 2
 
-        # replace the list versions with scalars
+        # scalar tolerances broadcast correctly in forward and adjoint
         atol = float(self.atol)
         rtol = float(self.rtol)
 
         if integration_times is None:
             if self.train_T:
-                integration_times = torch.stack(
-                    [torch.tensor(0.0).to(x), self.sqrt_end_time * self.sqrt_end_time]
-                ).to(x)
+                t0 = x.new_tensor(0.0)
+                t1 = (self.sqrt_end_time * self.sqrt_end_time).to(x)
+                integration_times = torch.stack((t0, t1))
             else:
-                integration_times = torch.tensor([0., self.T], requires_grad=False).to(x)
+                integration_times = torch.tensor([0., self.T],
+                                                 dtype=x.dtype,
+                                                 device=x.device,
+                                                 requires_grad=False)
 
         if reverse:
             integration_times = _flip(integration_times, 0)
@@ -90,7 +90,7 @@ class CNF(nn.Module):
             state_t = odeint(
                 self.odefunc,
                 states,
-                integration_times.to(x),
+                integration_times,  # already on x.device
                 atol=atol,
                 rtol=rtol,
                 method=self.solver,
@@ -100,7 +100,7 @@ class CNF(nn.Module):
             state_t = odeint(
                 self.odefunc,
                 states,
-                integration_times.to(x),
+                integration_times,
                 atol=self.test_atol,
                 rtol=self.test_rtol,
                 method=self.test_solver,

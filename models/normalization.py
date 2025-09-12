@@ -45,8 +45,8 @@ class MovingBatchNormNd(nn.Module):
 
     def _forward(self, x, logpx=None):
         num_channels = x.size(-1)
-        used_mean = self.running_mean.clone().detach()
-        used_var = self.running_var.clone().detach()
+        used_mean = self.running_mean.to(x).clone().detach()
+        used_var  = self.running_var.to(x).clone().detach()
 
         if self.training:
             # compute batch statistics
@@ -75,13 +75,13 @@ class MovingBatchNormNd(nn.Module):
 
         # perform normalization
         used_mean = used_mean.view(*self.shape).expand_as(x)
-        used_var = used_var.view(*self.shape).expand_as(x)
+        used_var  = used_var.view(*self.shape).expand_as(x)
 
         y = (x - used_mean) * torch.exp(-0.5 * torch.log(used_var + self.eps))
 
         if self.affine:
-            weight = self.weight.view(*self.shape).expand_as(x)
-            bias = self.bias.view(*self.shape).expand_as(x)
+            weight = self.weight.view(*self.shape).expand_as(x).to(x)
+            bias   = self.bias.view(*self.shape).expand_as(x).to(x)
             y = y * torch.exp(weight) + bias
 
         if logpx is None:
@@ -90,17 +90,18 @@ class MovingBatchNormNd(nn.Module):
             return y, logpx - self._logdetgrad(x, used_var).sum(-1, keepdim=True)
 
     def _reverse(self, y, logpy=None):
-        used_mean = self.running_mean
-        used_var = self.running_var
+        used_mean = self.running_mean.to(y).clone().detach()
+        used_var  = self.running_var.to(y).clone().detach()
 
         if self.affine:
-            weight = self.weight.view(*self.shape).expand_as(y)
-            bias = self.bias.view(*self.shape).expand_as(y)
+            weight = self.weight.view(*self.shape).expand_as(y).to(y)
+            bias   = self.bias.view(*self.shape).expand_as(y).to(y)
             y = (y - bias) * torch.exp(-weight)
 
         used_mean = used_mean.view(*self.shape).expand_as(y)
-        used_var = used_var.view(*self.shape).expand_as(y)
-        x = y * torch.exp(0.5 * torch.log(used_var + self.eps)) + used_mean
+        used_var  = used_var.view(*self.shape).expand_as(y)
+        eps = self.eps if isinstance(self.eps, (float, int)) else self.eps.to(y)
+        x = y * torch.exp(0.5 * torch.log(used_var.to(y) + eps)) + used_mean.to(y)
 
         if logpy is None:
             return x
@@ -108,9 +109,10 @@ class MovingBatchNormNd(nn.Module):
             return x, logpy + self._logdetgrad(x, used_var).sum(-1, keepdim=True)
 
     def _logdetgrad(self, x, used_var):
+        used_var = used_var.to(x)
         logdetgrad = -0.5 * torch.log(used_var + self.eps)
         if self.affine:
-            weight = self.weight.view(*self.shape).expand(*x.size())
+            weight = self.weight.view(*self.shape).expand(*x.size()).to(x)
             logdetgrad += weight
         return logdetgrad
 

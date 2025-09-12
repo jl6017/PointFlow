@@ -77,6 +77,11 @@ class ConcatSquashLinear(nn.Module):
         self._hyper_gate = nn.Linear(1 + dim_c, dim_out)
 
     def forward(self, context, x):
+        # Assert context and x are on the same device as the layer
+        assert context.device == self._hyper_gate.weight.device, (
+            f"context device {context.device} != hyper_gate device {self._hyper_gate.weight.device}")
+        assert x.device == self._layer.weight.device, (
+            f"x device {x.device} != layer device {self._layer.weight.device}")
         gate = torch.sigmoid(self._hyper_gate(context))
         bias = self._hyper_bias(context)
         if x.dim() == 3:

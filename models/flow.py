@@ -1,3 +1,5 @@
+
+import torch
 from .odefunc import ODEfunc, ODEnet
 from .normalization import MovingBatchNorm1d
 from .cnf import CNF, SequentialFlow
@@ -77,13 +79,14 @@ def build_model(args, input_dim, hidden_dims, context_dim, num_blocks, condition
 
 def get_point_cnf(args):
     dims = tuple(map(int, args.dims.split("-")))
-    model = build_model(args, args.input_dim, dims, args.zdim, args.num_blocks, True).cuda()
+    device = 'cuda' if hasattr(args, 'gpu') and args.gpu is not None and args.gpu >= 0 and torch.cuda.is_available() else 'cpu'
+    model = build_model(args, args.input_dim, dims, args.zdim, args.num_blocks, True).to(device)
     print("Number of trainable parameters of Point CNF: {}".format(count_parameters(model)))
     return model
 
-
 def get_latent_cnf(args):
     dims = tuple(map(int, args.latent_dims.split("-")))
-    model = build_model(args, args.zdim, dims, 0, args.latent_num_blocks, False).cuda()
+    device = 'cuda' if hasattr(args, 'gpu') and args.gpu is not None and args.gpu >= 0 and torch.cuda.is_available() else 'cpu'
+    model = build_model(args, args.zdim, dims, 0, args.latent_num_blocks, False).to(device)
     print("Number of trainable parameters of Latent CNF: {}".format(count_parameters(model)))
     return model

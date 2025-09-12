@@ -7,6 +7,13 @@ __all__ = ["ODEnet", "ODEfunc"]
 
 
 def divergence_approx(f, y, e=None):
+    device = y.device
+    f = f.to(device)
+    y = y.to(device)
+    if e is None:
+        e = torch.randn_like(y, device=device)
+    else:
+        e = e.to(device)
     e_dzdx = torch.autograd.grad(f, y, e, create_graph=True)[0]
     e_dzdx_e = e_dzdx.mul(e)
 
@@ -118,20 +125,18 @@ class ODEfunc(nn.Module):
         for state in states:
             state.requires_grad_(True)
 
-        # Sample and fix the noise.
-        if self._e is None:
-            self._e = torch.randn_like(y, requires_grad=True).to(y)
-
+        # Always create a new random vector e on the correct device for each forward pass
         with torch.set_grad_enabled(True):
+            e = torch.randn_like(y, requires_grad=True, device=y.device)
             if len(states) == 3:  # conditional CNF
                 c = states[2]
                 tc = torch.cat([t, c.view(y.size(0), -1)], dim=1)
                 dy = self.diffeq(tc, y)
-                divergence = self.divergence_fn(dy, y, e=self._e).unsqueeze(-1)
+                divergence = self.divergence_fn(dy, y, e=e).unsqueeze(-1)
                 return dy, -divergence, torch.zeros_like(c).requires_grad_(True)
             elif len(states) == 2:  # unconditional CNF
                 dy = self.diffeq(t, y)
-                divergence = self.divergence_fn(dy, y, e=self._e).view(-1, 1)
+                divergence = self.divergence_fn(dy, y, e=e).view(-1, 1)
                 return dy, -divergence
             else:
                 assert 0, "`len(states)` should be 2 or 3"

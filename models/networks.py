@@ -88,9 +88,8 @@ class PointFlow(nn.Module):
         self.latent_cnf = get_latent_cnf(args) if args.use_latent_flow else nn.Sequential()
 
     @staticmethod
-    def sample_gaussian(size, truncate_std=None, gpu=None):
-        y = torch.randn(*size).float()
-        y = y if gpu is None else y.cuda(gpu)
+    def sample_gaussian(size, truncate_std=None, device=None):
+        y = torch.randn(*size, device=device, dtype=torch.float32)
         if truncate_std is not None:
             truncated_normal(y, mean=0, std=1, trunc_std=truncate_std)
         return y
@@ -127,6 +126,12 @@ class PointFlow(nn.Module):
         return opt
 
     def forward(self, x, opt, step, writer=None):
+        # Ensure input is on the same device as the model
+        device = next(self.parameters()).device
+        if isinstance(x, (list, tuple)):
+            x = [xi.to(device) for xi in x]
+        else:
+            x = x.to(device)
         opt.zero_grad()
         batch_size = x.size(0)
         num_points = x.size(1)
@@ -203,21 +208,23 @@ class PointFlow(nn.Module):
 
     def decode(self, z, num_points, truncate_std=None):
         # transform points from the prior to a point cloud, conditioned on a shape code
-        y = self.sample_gaussian((z.size(0), num_points, self.input_dim), truncate_std)
+        y = self.sample_gaussian((z.size(0), num_points, self.input_dim),
+                                 truncate_std, device=z.device)
         x = self.point_cnf(y, z, reverse=True).view(*y.size())
         return y, x
 
     def sample(self, batch_size, num_points, truncate_std=None, truncate_std_latent=None, gpu=None):
         assert self.use_latent_flow, "Sampling requires `self.use_latent_flow` to be True."
-        # Generate the shape code from the prior
-        w = self.sample_gaussian((batch_size, self.zdim), truncate_std_latent, gpu=gpu)
+        device = next(self.parameters()).device
+        w = self.sample_gaussian((batch_size, self.zdim), truncate_std_latent, device=device)
         z = self.latent_cnf(w, None, reverse=True).view(*w.size())
-        # Sample points conditioned on the shape code
-        y = self.sample_gaussian((batch_size, num_points, self.input_dim), truncate_std, gpu=gpu)
+        y = self.sample_gaussian((batch_size, num_points, self.input_dim), truncate_std, device=device)
         x = self.point_cnf(y, z, reverse=True).view(*y.size())
         return z, x
 
     def reconstruct(self, x, num_points=None, truncate_std=None):
+        device = next(self.parameters()).device
+        x = x.to(device, non_blocking=True)
         num_points = x.size(1) if num_points is None else num_points
         z = self.encode(x)
         _, x = self.decode(z, num_points, truncate_std)
