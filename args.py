@@ -21,8 +21,8 @@ def add_args(parser):
     parser.add_argument("--nonlinearity", type=str, default="tanh", choices=NONLINEARITIES)
     parser.add_argument('--use_adjoint', type=eval, default=True, choices=[True, False])
     parser.add_argument('--solver', type=str, default='dopri5', choices=SOLVERS)
-    parser.add_argument('--atol', type=float, default=1e-5)
-    parser.add_argument('--rtol', type=float, default=1e-5)
+    parser.add_argument('--atol', type=float, default=1e-4)
+    parser.add_argument('--rtol', type=float, default=1e-3)
     parser.add_argument('--batch_norm', type=eval, default=True, choices=[True, False])
     parser.add_argument('--sync_bn', type=eval, default=False, choices=[True, False])
     parser.add_argument('--bn_lag', type=float, default=0)
@@ -136,7 +136,7 @@ def add_args(parser):
                              'multi node data parallel training')
     parser.add_argument('--rank', default=0, type=int,
                         help='node rank for distributed training')
-    parser.add_argument('--gpu', default=0, type=int,
+    parser.add_argument('--gpu', default=None, type=int,
                         help='GPU id to use. None means using all available GPUs.')  # default 0 means use single GPU 0
 
     # Evaluation options

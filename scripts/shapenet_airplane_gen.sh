@@ -11,7 +11,7 @@ lr=2e-3
 epochs=4000
 ds=shapenet15k
 log_name="gen/${ds}-cate${cate}"
-data_dir="data/ShapeNetCore.v2.PC15k"
+data_dir="ShapeNetCore.v2.PC15k"
 
 python train.py \
     --log_name ${log_name} \
@@ -26,10 +26,9 @@ python train.py \
     --batch_size ${batch_size} \
     --zdim ${zdim} \
     --epochs ${epochs} \
-    --save_freq 50 \
-    --viz_freq 1 \
-    --log_freq 1 \
-    --val_freq 10 \
+    --use_adjoint True \
+    --rtol 1e-3 --atol 1e-3 \
+    --save_freq 50 --viz_freq 1 --log_freq 1 --val_freq 10 \
     --use_latent_flow
 
 echo "Done"
