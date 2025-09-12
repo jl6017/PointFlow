@@ -51,9 +51,12 @@ class Uniform15KPC(Dataset):
         self.all_cate_mids = []
         self.cate_idx_lst = []
         self.all_points = []
+        current_dir = os.path.dirname(__file__)
+        parent_dir = os.path.abspath(os.path.join(current_dir, os.pardir))
         for cate_idx, subd in enumerate(self.subdirs):
             # NOTE: [subd] here is synset id
-            sub_path = os.path.join(root_dir, subd, self.split)
+            sub_path = os.path.join(parent_dir, 'shapenet', root_dir, subd, '_', self.split)
+            # print("Processing %s" % sub_path)
             if not os.path.isdir(sub_path):
                 print("Directory missing : %s" % sub_path)
                 continue
@@ -67,7 +70,8 @@ class Uniform15KPC(Dataset):
             # NOTE: [mid] contains the split: i.e. "train/<mid>" or "val/<mid>" or "test/<mid>"
             for mid in all_mids:
                 # obj_fname = os.path.join(sub_path, x)
-                obj_fname = os.path.join(root_dir, subd, mid + ".npy")
+                obj_fname = os.path.join(parent_dir, 'shapenet', root_dir, subd, '_', mid + ".npy")
+                # print("Loading %s" % obj_fname)
                 try:
                     point_cloud = np.load(obj_fname)  # (15k, 3)
                 except:
@@ -77,6 +81,8 @@ class Uniform15KPC(Dataset):
                 self.all_points.append(point_cloud[np.newaxis, ...])
                 self.cate_idx_lst.append(cate_idx)
                 self.all_cate_mids.append((subd, mid))
+
+        # print(self.all_points)
 
         # Shuffle the index deterministically (based on the number of examples)
         self.shuffle_idx = list(range(len(self.all_points)))
@@ -238,7 +244,7 @@ class ModelNet10PointClouds(Uniform15KPC):
 
 
 class ShapeNet15kPointClouds(Uniform15KPC):
-    def __init__(self, root_dir="data/ShapeNetCore.v2.PC15k",
+    def __init__(self, root_dir="ShapeNetCore.v2.PC15k",
                  categories=['airplane'], tr_sample_size=10000, te_sample_size=2048,
                  split='train', scale=1., normalize_per_shape=False,
                  normalize_std_per_axis=False,
@@ -383,7 +389,10 @@ def get_data_loaders(args):
 
 if __name__ == "__main__":
     shape_ds = ShapeNet15kPointClouds(categories=['airplane'], split='val')
-    x_tr, x_te = next(iter(shape_ds))
+    sample = shape_ds[0]
+    # x_tr, x_te = next(iter(shape_ds))
+    x_tr = sample['train_points']
+    x_te = sample['test_points']
     print(x_tr.shape)
     print(x_te.shape)
 
