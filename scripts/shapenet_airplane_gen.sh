@@ -28,8 +28,9 @@ python train.py \
     --epochs ${epochs} \
     --use_adjoint True \
     --rtol 1e-3 --atol 1e-3 \
-    --save_freq 10 --viz_freq 1 --log_freq 1 --val_freq 10 \
-    --use_latent_flow
+    --save_freq 1 --viz_freq 1 --log_freq 1 --val_freq 1 \
+    --use_latent_flow \
+    --no_validation
 
 echo "Done"
 exit 0

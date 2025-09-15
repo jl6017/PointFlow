@@ -19,7 +19,7 @@ def main(args):
 
     print("Resume Path:%s" % args.resume_checkpoint)
     checkpoint = torch.load(args.resume_checkpoint)
-    model.load_state_dict(checkpoint)
+    model.load_state_dict(checkpoint['model'])
     model.eval()
 
     _, te_dataset = get_datasets(args)
