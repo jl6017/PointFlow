@@ -84,9 +84,9 @@ def add_args(parser):
                         help='Whether to perform normalization per shape.')
     parser.add_argument('--normalize_std_per_axis', action='store_true',
                         help='Whether to perform normalization per axis.')
-    parser.add_argument("--tr_max_sample_points", type=int, default=1024,
+    parser.add_argument("--tr_max_sample_points", type=int, default=4096,
                         help='Max number of sampled points (train)')
-    parser.add_argument("--te_max_sample_points", type=int, default=1024,
+    parser.add_argument("--te_max_sample_points", type=int, default=4096,
                         help='Max number of sampled points (test)')
     parser.add_argument('--num_workers', type=int, default=4,
                         help='Number of data loading threads')
@@ -144,7 +144,7 @@ def add_args(parser):
                         help='Whether set to the evaluation for reconstruction.')
     parser.add_argument('--num_sample_shapes', default=10, type=int,
                         help='Number of shapes to be sampled (for demo.py).')
-    parser.add_argument('--num_sample_points', default=1024, type=int,
+    parser.add_argument('--num_sample_points', default=4096, type=int,
                         help='Number of points (per-shape) to be sampled (for demo.py).')
 
     return parser

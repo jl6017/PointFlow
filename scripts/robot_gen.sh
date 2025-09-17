@@ -14,7 +14,7 @@ batch_size=16
 lr=2e-3
 epochs=1000
 ds=robot
-log_name="gen/${ds}-cate${cate}"
+log_name="gen1/${ds}-cate${cate}"
 data_dir="./../dataset_cr/pointcloud_15k/"
 
 python train_cr.py \
@@ -32,7 +32,7 @@ python train_cr.py \
     --epochs ${epochs} \
     --use_adjoint True \
     --rtol 1e-3 --atol 1e-3 \
-    --save_freq 10 --viz_freq 1 --log_freq 1 --val_freq 1 \
+    --save_freq 20 --viz_freq 1 --log_freq 1 --val_freq 1 \
     --use_latent_flow \
     --no_validation
 
